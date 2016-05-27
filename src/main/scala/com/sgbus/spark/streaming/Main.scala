@@ -11,16 +11,16 @@ import org.apache.spark.{SparkContext, SparkConf}
 
 object Main extends App with AppConf {
 
-  val timestampFormat: SimpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
-  val dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyyMM")
 
   /*  Spark Configuration */
   val sparkConf =
     new SparkConf()
       .setAppName(AppName)
       .set("es.index.auto.create", "true")
+      .set("es.resource", "sgbus/stats")
+      .set("es.nodes", "localhost")
+      .set("es.port", "9200")
       .setMaster(SparkMaster)
-
 
   val sc = new SparkContext(sparkConf)
   val ssc = new StreamingContext(sc, SparkBatchWindow)

@@ -10,7 +10,9 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion,
   "org.apache.spark" %% "spark-streaming" % sparkVersion,
   "org.apache.spark" %% "spark-streaming-kafka" % sparkVersion,
-  "org.elasticsearch" %% "elasticsearch-spark" % "2.3.2"
+  "org.elasticsearch" %% "elasticsearch-spark" % "2.3.2",
+  "com.google.code.gson" % "gson" % "2.6.2",
+  "joda-time" % "joda-time" % "2.9.3"
 
 )
 
