@@ -42,7 +42,7 @@ object PipelineBusServices extends AppConf {
   }
 
   def computeMeanWaitingTime(dstream: DStream[(String, (Double, Int))]): DStream[Stat] = {
-    dstream.reduceByKeyAndWindow((a, b) => (a._1 + b._2, a._2 + b._2), windowDuration = Seconds(WindowDuration))
+    dstream.reduceByKeyAndWindow((a, b) => (a._1 + b._1, a._2 + b._2), windowDuration = Seconds(WindowDuration))
       .map(stat =>
         Stat(
           new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
