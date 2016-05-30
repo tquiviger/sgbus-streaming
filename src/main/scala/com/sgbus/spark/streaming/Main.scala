@@ -1,8 +1,5 @@
 package com.sgbus.spark.streaming
 
-import java.text.SimpleDateFormat
-
-
 import com.sgbus.utils.AppConf
 import kafka.serializer.StringDecoder
 import org.apache.spark.streaming.StreamingContext
@@ -11,15 +8,15 @@ import org.apache.spark.{SparkContext, SparkConf}
 
 object Main extends App with AppConf {
 
-
   /*  Spark Configuration */
   val sparkConf =
     new SparkConf()
       .setAppName(AppName)
       .set("es.index.auto.create", "true")
-      .set("es.resource", "sgbus/stats")
-      .set("es.nodes", "localhost")
-      .set("es.port", "9200")
+      .set("es.nodes", ESBroker)
+      .set("es.port", ESPort)
+      .set("es.nodes.wan.only", "true")
+      .set("es.resource", ESIndex)
       .setMaster(SparkMaster)
 
   val sc = new SparkContext(sparkConf)

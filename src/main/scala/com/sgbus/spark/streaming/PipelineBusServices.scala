@@ -1,6 +1,5 @@
 package com.sgbus.spark.streaming
 
-import java.sql.Date
 import java.text.SimpleDateFormat
 
 import com.sgbus.spark.business.{Service, Stat}
@@ -8,7 +7,7 @@ import com.sgbus.utils.AppConf
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.dstream.DStream
 import org.elasticsearch.spark._
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, LocalDateTime}
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 
 import scala.util.Try
@@ -16,17 +15,16 @@ import scala.util.Try
 object PipelineBusServices extends AppConf {
 
   val timestampFormat: SimpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss")
-  val elasticTimestampFormat: DateTimeFormatter =  DateTimeFormat.forPattern("yyyyMMdd'T'HHmmssZ")
+  val fmt = DateTimeFormat.forPattern("MM/dd/yyyy HH:mm:ss")
 
   // Main Pipeline
-  def pipeline(rawStream: DStream[String]) = saveToElastic(reduce(processService(filterServices(parseLines(rawStream)))))
+  def pipeline(rawStream: DStream[String]) = saveToElastic(computeMeanWaitingTime(processService(filterServices(parseLines(rawStream)))))
 
   // Parsing Log Lines
   def parseLines(logLineStream: DStream[String]): DStream[Option[Service]] = {
     logLineStream.map(logLine => parseLineToCaseClass(logLine))
   }
 
-  // Filtering None SortieFond and Eligible Operation Codes
   def filterServices(dstream: DStream[Option[Service]]): DStream[Service] = {
     dstream.filter({
       case None => false
@@ -43,20 +41,20 @@ object PipelineBusServices extends AppConf {
     ))
   }
 
-  def reduce(dstream: DStream[(String, (Double, Int))]): DStream[Stat] = {
-    dstream.reduceByKeyAndWindow((a, b) => ((a._1 + b._2, a._2 + b._2)), windowDuration = Seconds(10), slideDuration = Seconds(10))
+  def computeMeanWaitingTime(dstream: DStream[(String, (Double, Int))]): DStream[Stat] = {
+    dstream.reduceByKeyAndWindow((a, b) => (a._1 + b._2, a._2 + b._2), windowDuration = Seconds(WindowDuration))
       .map(stat =>
         Stat(
-          new DateTime().toString(),
+          new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
           "meanWaitingTimeByBus",
           stat._1,
-          stat._2._1 / stat._2._2)
+          (math floor (stat._2._1 / stat._2._2) * 100) / 100)
+
       )
   }
 
   def saveToElastic(dstream: DStream[Stat]) = {
-    dstream.foreachRDD(_.saveToEs("sgbus/stats"))
-//    dstream.foreachRDD(_.foreach(stat => println(stat.toJson())))
+    dstream.foreachRDD(_.saveToEs(ESIndex))
   }
 
 

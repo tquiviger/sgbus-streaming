@@ -11,8 +11,14 @@ trait AppConf {
   val SparkStreamName = conf.getString("SparkStreamName")
   val SparkBatchWindow = Seconds(conf.getInt("SparkBatchWindow"))
   val SparkMaster = conf.getString("SparkMaster")
+  val WindowDuration = conf.getInt("WindowDuration")
 
   val KafkaBroker = conf.getString("KafkaBroker")
   val KafkaTopicSgBus = conf.getString("KafkaTopicSgBus")
   val NbThreadsPerKafkaTopic = conf.getString("NbThreadsPerKafkaTopic")
+
+  val ESBroker = conf.getString("ESBroker")
+  val ESPort = conf.getString("ESPort")
+  val ESIndex = conf.getString("ESIndex")
+
 }
