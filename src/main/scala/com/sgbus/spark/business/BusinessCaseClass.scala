@@ -18,7 +18,7 @@ case class Service(timestamp: Date,
 
 case class Stat(
                  timestamp: String,
-                 stat_type: String,
+                 stattype: String,
                  key: String,
                  value: Double
                ){

@@ -7,8 +7,8 @@ import com.sgbus.utils.AppConf
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.dstream.DStream
 import org.elasticsearch.spark._
-import org.joda.time.{DateTime, LocalDateTime}
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import org.joda.time.LocalDateTime
+import org.joda.time.format.DateTimeFormat
 
 import scala.util.Try
 
@@ -26,10 +26,11 @@ object PipelineBusServices extends AppConf {
   }
 
   def filterServices(dstream: DStream[Option[Service]]): DStream[Service] = {
-    dstream.filter({
-      case None => false
-      case _ => true
-    })
+    dstream
+      .filter({
+        case None => false
+        case _ => true
+      })
       .map(_.get)
   }
 
@@ -43,13 +44,24 @@ object PipelineBusServices extends AppConf {
 
   def computeMeanWaitingTime(dstream: DStream[(String, (Double, Int))]): DStream[Stat] = {
     dstream.reduceByKeyAndWindow((a, b) => (a._1 + b._1, a._2 + b._2), windowDuration = Seconds(WindowDuration))
-      .map(stat =>
-        Stat(
-          new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
-          "meanWaitingTimeByBus",
-          stat._1,
-          (math floor (stat._2._1 / stat._2._2) * 100) / 100)
-
+      .flatMap(stat =>
+        List(
+          Stat(
+            new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
+            "meanWaitingTime",
+            stat._1,
+            (math floor (stat._2._1 / stat._2._2) * 100) / 100),
+          Stat(
+            new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
+            "maxWaitingTime",
+            stat._1,
+            Math.max(stat._2._1, stat._2._2)),
+          Stat(
+            new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
+            "minWaitingTime",
+            stat._1,
+            Math.min(stat._2._1, stat._2._2))
+        )
       )
   }
 
