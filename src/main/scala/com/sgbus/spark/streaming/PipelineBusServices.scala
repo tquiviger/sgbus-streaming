@@ -34,33 +34,33 @@ object PipelineBusServices extends AppConf {
       .map(_.get)
   }
 
-  def processService(dstream: DStream[Service]): DStream[(String, (Double, Int))] = {
+  def processService(dstream: DStream[Service]): DStream[(String, (Double,Double,Double, Int))] = {
     dstream.flatMap(toto => List(
-      (toto.busId, (toto.waitingTimeBus1, 1)),
-      (toto.busId, (toto.waitingTimeBus2, 1)),
-      (toto.busId, (toto.waitingTimeBus3, 1))
+      (toto.busId, (toto.waitingTimeBus1,toto.waitingTimeBus1,toto.waitingTimeBus1, 1)),
+      (toto.busId, (toto.waitingTimeBus2,toto.waitingTimeBus1,toto.waitingTimeBus1, 1)),
+      (toto.busId, (toto.waitingTimeBus3,toto.waitingTimeBus1,toto.waitingTimeBus1, 1))
     ))
   }
 
-  def computeMeanWaitingTime(dstream: DStream[(String, (Double, Int))]): DStream[Stat] = {
-    dstream.reduceByKeyAndWindow((a, b) => (a._1 + b._1, a._2 + b._2), windowDuration = Seconds(WindowDuration))
+  def computeMeanWaitingTime(dstream: DStream[(String, (Double,Double,Double, Int))]): DStream[Stat] = {
+    dstream.reduceByKeyAndWindow((a, b) => (a._1 + b._1, Math.min(a._2, b._2), Math.max(a._3, b._3), a._4 + b._4), windowDuration = Seconds(WindowDuration))
       .flatMap(stat =>
         List(
           Stat(
             new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
             "meanWaitingTime",
             stat._1,
-            (math floor (stat._2._1 / stat._2._2) * 100) / 100),
-          Stat(
-            new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
-            "maxWaitingTime",
-            stat._1,
-            Math.max(stat._2._1, stat._2._2)),
+            (math floor (stat._2._1 / stat._2._4) * 100) / 100),
           Stat(
             new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
             "minWaitingTime",
             stat._1,
-            Math.min(stat._2._1, stat._2._2))
+            stat._2._2),
+          Stat(
+            new LocalDateTime().withSecondOfMinute(0).withMillisOfSecond(0).toString(),
+            "maxWaitingTime",
+            stat._1,
+            stat._2._3)
         )
       )
   }
